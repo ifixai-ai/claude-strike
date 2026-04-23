@@ -5,14 +5,37 @@ A curated Claude Code harness that merges three upstream systems into one opinio
 | System | Role in this bundle |
 |---|---|
 | [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code) | 13 curated agents + `rules/common` + `rules/python` |
-| [`forrestchang/andrej-karpathy-skills`](https://github.com/forrestchang/andrej-karpathy-skills) | Rules merged into `CLAUDE.md`; see [`docs/karpathy-diff.md`](docs/karpathy-diff.md) for the audit |
-| [`github/spec-kit`](https://github.com/github/spec-kit) | Opt-in per project, documented in [`docs/spec-kit.md`](docs/spec-kit.md) — not bundled |
+| [`forrestchang/andrej-karpathy-skills`](https://github.com/forrestchang/andrej-karpathy-skills) | Rules merged into `CLAUDE.md` |
+| [`github/spec-kit`](https://github.com/github/spec-kit) | Initialised automatically on project installs; see [`docs/spec-kit.md`](docs/spec-kit.md) |
 
 Nothing here is novel. The value is the *curation*: one opinionated behavioural contract, the subset of ECC that survives the no-comments / no-hand-waving rules, and a single idempotent installer that applies them globally or per-repo.
 
 ## Quickstart
 
-**One-liner** (once the repo is public):
+### Homebrew (recommended)
+
+```sh
+brew tap n-papaioannou/claude-harness https://github.com/n-papaioannou/claude-harness
+brew install --HEAD claude-harness
+```
+
+That installs a `claude-harness` command:
+
+```sh
+claude-harness                       # global install to ~/.claude/
+claude-harness --project             # project install into ./ + spec-kit init
+claude-harness --project --no-spec-kit
+claude-harness --dry-run             # print what would happen, write nothing
+claude-harness --force               # overwrite an existing CLAUDE.md
+```
+
+The formula is HEAD-only until a tagged release exists — pin to a version once `v0.1.0` ships.
+
+To upgrade: `brew upgrade --fetch-HEAD claude-harness`. To remove the command (not the `.claude/` files it wrote): `brew uninstall claude-harness`. Use `./uninstall.sh` to reverse the `.claude/` install itself.
+
+### curl + bash
+
+For users without Homebrew, or to script this in CI:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/n-papaioannou/claude-harness/main/setup.sh | bash
@@ -21,19 +44,21 @@ curl -fsSL https://raw.githubusercontent.com/n-papaioannou/claude-harness/main/s
 The script auto-clones into `~/.cache/claude-harness` and runs `install.sh` for you. Pass flags after `bash -s --`:
 
 ```sh
-# project install, plus spec-kit init in the current repo
-curl -fsSL https://raw.githubusercontent.com/n-papaioannou/claude-harness/main/setup.sh | bash -s -- --project --spec-kit
+# project install — copies agents + CLAUDE.md, then runs `specify init --here`
+curl -fsSL https://raw.githubusercontent.com/n-papaioannou/claude-harness/main/setup.sh | bash -s -- --project
 
 # dry-run to see what would happen
 curl -fsSL https://raw.githubusercontent.com/n-papaioannou/claude-harness/main/setup.sh | bash -s -- --dry-run
 ```
 
-**If you've already cloned this repo:**
+For reproducibility, pin the URL to a release tag (e.g. `refs/tags/v0.1.0/setup.sh`) instead of `main` once a tagged release exists.
+
+### Cloned repo
 
 ```sh
-./setup.sh                           # global install, no spec-kit
-./setup.sh --project                 # project install
-./setup.sh --project --spec-kit      # project install + spec-kit init here
+./setup.sh                           # global install (spec-kit is per-project, so skipped here)
+./setup.sh --project                 # project install + spec-kit init here
+./setup.sh --project --no-spec-kit   # project install, skip spec-kit
 ./setup.sh --dry-run                 # print what would happen, write nothing
 ./setup.sh --force                   # overwrite an existing CLAUDE.md
 ```
@@ -97,21 +122,22 @@ claude-harness/
 ├── NOTICE
 ├── .gitignore
 ├── .github/workflows/ci.yml           # shellcheck + install round-trip
+├── Formula/
+│   └── claude-harness.rb              # Homebrew formula (HEAD-only until v0.1.0)
 ├── install.sh
 ├── uninstall.sh
-├── setup.sh                           # one-shot: clone (if needed) + install + optional spec-kit
+├── setup.sh                           # one-shot: clone (if needed) + install + spec-kit init
 ├── CLAUDE.md                          # merged behavioural contract
 ├── .claude/
 │   ├── agents/                        # 13 ECC agents
 │   └── rules/{common,python}/         # ECC rules
 └── docs/
-    ├── karpathy-diff.md               # rule-by-rule audit vs upstream
-    └── spec-kit.md                    # opt-in pointer
+    └── spec-kit.md                    # how spec-kit integrates
 ```
 
 ## Behavioural contract
 
-[`CLAUDE.md`](CLAUDE.md) is the source of truth for how Claude Code should behave in any repo touched by this harness. It merges the author's existing project contract with Karpathy's guidelines; see [`docs/karpathy-diff.md`](docs/karpathy-diff.md) for the rule-by-rule mapping.
+[`CLAUDE.md`](CLAUDE.md) is the source of truth for how Claude Code should behave in any repo touched by this harness. It merges the author's existing project contract with Karpathy's guidelines.
 
 ## Language scope
 
@@ -119,7 +145,7 @@ Language-specific rules are bundled only for **Python**, in [`.claude/rules/pyth
 
 ## spec-kit
 
-Not installed by default. Run `./setup.sh --spec-kit` in a repo to add it, or see [`docs/spec-kit.md`](docs/spec-kit.md) for the manual command. When spec-kit is initialised in a repo, `CLAUDE.md` tells Claude to drive non-trivial work through `/specify` → `/plan` → `/tasks`.
+Project installs (`./setup.sh --project`) initialise spec-kit automatically — this requires [`uv`](https://docs.astral.sh/uv/) on `PATH` and an existing `.git/` in the target directory. Pass `--no-spec-kit` to skip. Global installs don't initialise spec-kit because `.specify/` is per-project. See [`docs/spec-kit.md`](docs/spec-kit.md) for details. When spec-kit is initialised in a repo, `CLAUDE.md` tells Claude to drive non-trivial work through `/specify` → `/plan` → `/tasks`.
 
 ## License
 

@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run shellcheck
+        run: shellcheck install.sh uninstall.sh setup.sh
+
+  install-roundtrip:
+    name: install + uninstall round-trip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: dry-run global install
+        run: ./install.sh --dry-run
+        env:
+          HOME: ${{ runner.temp }}/home
+
+      - name: first install (global)
+        run: ./install.sh
+        env:
+          HOME: ${{ runner.temp }}/home
+
+      - name: assert every shipped agent landed
+        env:
+          HOME: ${{ runner.temp }}/home
+        run: |
+          set -euo pipefail
+          for f in .claude/agents/*.md; do
+            dest="$HOME/.claude/agents/$(basename "$f")"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+
+          for f in .claude/rules/common/*.md .claude/rules/python/*.md; do
+            rel="${f#.claude/}"
+            dest="$HOME/.claude/$rel"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+
+          test -f "$HOME/.claude/CLAUDE.md"
+          test -f "$HOME/.claude/.claude-harness-manifest"
+
+      - name: second install is idempotent (no backups created)
+        env:
+          HOME: ${{ runner.temp }}/home
+        run: |
+          set -euo pipefail
+          ./install.sh | tee /tmp/second-install.log
+          grep -qE "files backed up:\s+0" /tmp/second-install.log
+          grep -qE "files written:\s+0"  /tmp/second-install.log
+
+      - name: uninstall
+        run: ./uninstall.sh
+        env:
+          HOME: ${{ runner.temp }}/home
+
+      - name: assert uninstall removed everything it installed
+        env:
+          HOME: ${{ runner.temp }}/home
+        run: |
+          set -euo pipefail
+          for f in .claude/agents/*.md; do
+            dest="$HOME/.claude/agents/$(basename "$f")"
+            if [[ -e "$dest" ]]; then
+              echo "uninstall left behind: $dest"
+              exit 1
+            fi
+          done
+
+      - name: project-mode install works too
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          cp -r . "$work/harness"
+          cd "$work/harness"
+          ./install.sh --project
+          test -f ./.claude/agents/code-reviewer.md
+          ./uninstall.sh --project

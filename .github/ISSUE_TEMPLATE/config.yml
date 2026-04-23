@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Everything Claude Code (ECC) upstream
+    url: https://github.com/affaan-m/everything-claude-code/issues
+    about: For bugs in the agents or rules themselves, file upstream.
+  - name: spec-kit upstream
+    url: https://github.com/github/spec-kit/issues
+    about: For `/specify`, `/plan`, `/tasks` behaviour, file with spec-kit.

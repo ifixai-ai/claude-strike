@@ -2,6 +2,8 @@
 
 Thanks for considering a contribution. This harness is deliberately small and opinionated — please read this file before opening a PR so we can keep it that way.
 
+Before contributing, please also read the [Code of Conduct](CODE_OF_CONDUCT.md). For suspected security issues, see [SECURITY.md](SECURITY.md) — do **not** open a public issue.
+
 ## Scope
 
 This repo curates three upstream systems into one installable bundle:

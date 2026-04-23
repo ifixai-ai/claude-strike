@@ -36,6 +36,8 @@ orchestrators, and niche domain agents from ECC were intentionally excluded.
 ## Andrej Karpathy Skills (`forrestchang/andrej-karpathy-skills`)
 
 - Source: https://github.com/forrestchang/andrej-karpathy-skills
+- Upstream license: none declared at time of writing (the repo ships without
+  a `LICENSE` file). This is the reason no content is copied from it.
 - Bundled: nothing. The merged `CLAUDE.md` was informed by the Karpathy
   `CLAUDE.md`, but every rule was already expressed (usually more strictly) in
   the base contract, so no file is copied. The reference above is kept for
@@ -43,6 +45,6 @@ orchestrators, and niche domain agents from ECC were intentionally excluded.
 
 ## Not bundled
 
-- `spec-kit` (https://github.com/github/spec-kit) is referenced in
-  `docs/spec-kit.md` but is not included in this repository. Run it per-project
-  with `uvx` as documented.
+- `spec-kit` (https://github.com/github/spec-kit, MIT licensed) is referenced
+  in `docs/spec-kit.md` but is not included in this repository. Project installs
+  fetch and run it per-project with `uvx` as documented.

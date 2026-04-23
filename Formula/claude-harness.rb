@@ -1,10 +1,20 @@
+# SPDX-License-Identifier: MIT
 class ClaudeHarness < Formula
   desc "Curated Claude Code harness: behavioural contract, 13 agents, spec-kit glue"
   homepage "https://github.com/n-papaioannou/claude-harness"
   license "MIT"
+
+  # When v0.1.0 ships, uncomment this block and fill in the sha256 from
+  # `shasum -a 256 <(curl -fsSL https://github.com/n-papaioannou/claude-harness/archive/refs/tags/v0.1.0.tar.gz)`
+  #
+  # url "https://github.com/n-papaioannou/claude-harness/archive/refs/tags/v0.1.0.tar.gz"
+  # sha256 "<replace-with-sha256-of-v0.1.0-tarball>"
+  # version "0.1.0"
+
   head "https://github.com/n-papaioannou/claude-harness.git", branch: "main"
 
   depends_on "bash"
+  depends_on "git"
 
   def install
     libexec.install Dir["*"]

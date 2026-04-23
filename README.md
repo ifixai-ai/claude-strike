@@ -147,6 +147,16 @@ Language-specific rules are bundled only for **Python**, in [`.claude/rules/pyth
 
 Project installs (`./setup.sh --project`) initialise spec-kit automatically — this requires [`uv`](https://docs.astral.sh/uv/) on `PATH` and an existing `.git/` in the target directory. Pass `--no-spec-kit` to skip. Global installs don't initialise spec-kit because `.specify/` is per-project. See [`docs/spec-kit.md`](docs/spec-kit.md) for details. When spec-kit is initialised in a repo, `CLAUDE.md` tells Claude to drive non-trivial work through `/specify` → `/plan` → `/tasks`.
 
+## Changes
+
+See [`CHANGELOG.md`](CHANGELOG.md).
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Upstream attributions are in [`NOTICE`](NOTICE).

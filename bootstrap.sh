@@ -28,8 +28,12 @@ else
       echo "       commit/stash or remove the directory and re-run." >&2
       exit 1
     fi
-    git -C "$CACHE" fetch --prune origin
-    git -C "$CACHE" pull --ff-only
+    current_url="$(git -C "$CACHE" remote get-url origin 2>/dev/null || true)"
+    if [[ "$current_url" != "$REPO" ]]; then
+      git -C "$CACHE" remote set-url origin "$REPO"
+    fi
+    git -C "$CACHE" fetch --depth 1 origin HEAD
+    git -C "$CACHE" reset --hard FETCH_HEAD
   else
     mkdir -p "$(dirname "$CACHE")"
     git clone --depth 1 "$REPO" "$CACHE"

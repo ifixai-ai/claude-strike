@@ -106,8 +106,8 @@ elif command -v uvx >/dev/null 2>&1; then
     echo "error: CLAUDE_STRIKE_SPEC_KIT_REF contains unsupported characters: $SPEC_KIT_REF" >&2
     exit 1
   fi
-  echo "running: specify init --here --ai claude  (spec-kit @ $SPEC_KIT_REF)"
-  if ! uvx --from "git+https://github.com/github/spec-kit.git@$SPEC_KIT_REF" specify init --here --ai claude; then
+  echo "running: specify init --here --ai claude --force --ignore-agent-tools  (spec-kit @ $SPEC_KIT_REF)"
+  if ! uvx --from "git+https://github.com/github/spec-kit.git@$SPEC_KIT_REF" specify init --here --ai claude --force --ignore-agent-tools; then
     echo "warning: spec-kit init failed — the files are installed, spec-kit is not" >&2
     echo "         (existing .specify/ is preserved; delete it to re-init)" >&2
   fi

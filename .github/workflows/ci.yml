@@ -93,6 +93,39 @@ jobs:
           test -n "$backup"
           grep -q "USER MODIFIED LINE" "$backup"
 
+  spec-kit-roundtrip:
+    name: spec-kit round-trip
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: install uv
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: bootstrap into scratch repo and run spec-kit end-to-end
+        run: |
+          set -euo pipefail
+          command -v uvx
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          (cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/bootstrap.log"
+          grep -qv "spec-kit init failed" "$RUNNER_TEMP/bootstrap.log"
+          test -d "$work/.specify"
+          test -f "$work/.specify/memory/constitution.md"
+          test -f "$work/CLAUDE.md"
+          # claude-strike's rules must survive spec-kit merge
+          grep -q "Spec before non-trivial work" "$work/CLAUDE.md"
+          # claude-strike's agents must survive
+          for f in .claude/agents/*.md; do
+            test -f "$work/.claude/agents/$(basename "$f")"
+          done
+
   bootstrap-edge-cases:
     name: bootstrap edge cases
     runs-on: ubuntu-latest

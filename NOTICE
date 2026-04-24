@@ -18,12 +18,6 @@ claude-strike includes content from these projects.
 
 Full MIT text is in `LICENSE`.
 
-## andrej-karpathy-skills
-
-- Source: https://github.com/forrestchang/andrej-karpathy-skills
-- License: none declared upstream.
-- Included: nothing. `CLAUDE.md` was informed by the upstream file but no file was copied. Listed here as credit.
-
 ## spec-kit
 
 - Source: https://github.com/github/spec-kit (MIT)

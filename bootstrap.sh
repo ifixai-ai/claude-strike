@@ -101,7 +101,7 @@ elif [[ ! -d "$TARGET/.git" ]]; then
   echo "warning: $TARGET is not a git repo — skipping spec-kit init" >&2
   echo "         run 'git init' and re-run, or set CLAUDE_STRIKE_SKIP_SPEC_KIT=1" >&2
 elif command -v uvx >/dev/null 2>&1; then
-  SPEC_KIT_REF="${CLAUDE_STRIKE_SPEC_KIT_REF:-main}"
+  SPEC_KIT_REF="${CLAUDE_STRIKE_SPEC_KIT_REF:-v0.8.0}"
   if [[ ! "$SPEC_KIT_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
     echo "error: CLAUDE_STRIKE_SPEC_KIT_REF contains unsupported characters: $SPEC_KIT_REF" >&2
     exit 1

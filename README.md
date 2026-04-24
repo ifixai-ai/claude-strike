@@ -25,7 +25,7 @@ Re-running is safe. Existing files are backed up to `<path>.bak.<timestamp>` bef
 ```sh
 git clone https://github.com/n-papaioannou/claude-strike.git /tmp/claude-strike
 cd ~/your-project
-/tmp/claude-strike/bootstrap.sh
+bash /tmp/claude-strike/bootstrap.sh
 ```
 
 ### Requirements

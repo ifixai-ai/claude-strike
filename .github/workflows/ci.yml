@@ -17,6 +17,28 @@ jobs:
       - name: run shellcheck
         run: shellcheck bootstrap.sh
 
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: install gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+        run: |
+          set -euo pipefail
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL "$url" -o /tmp/gitleaks.tgz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: scan history and working tree
+        run: gitleaks detect --source . --redact --verbose --no-banner
+
   install-roundtrip:
     name: install round-trip
     strategy:
@@ -70,3 +92,81 @@ jobs:
           backup="$(find "$WORK" -maxdepth 1 -name 'CLAUDE.md.bak.*' -print -quit)"
           test -n "$backup"
           grep -q "USER MODIFIED LINE" "$backup"
+
+  bootstrap-edge-cases:
+    name: bootstrap edge cases
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: refuses $HOME as cache directory
+        env:
+          CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+          CLAUDE_STRIKE_CACHE: /home/runner
+        run: |
+          set -euo pipefail
+          standalone="$(mktemp -d)/bootstrap.sh"
+          cp "$GITHUB_WORKSPACE/bootstrap.sh" "$standalone"
+          chmod +x "$standalone"
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && "$standalone" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "CLAUDE_STRIKE_CACHE must be a dedicated subdirectory"
+
+      - name: refuses a dirty cache checkout
+        env:
+          CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+        run: |
+          set -euo pipefail
+          cache="$(mktemp -d)/claude-strike-cache"
+          git clone --depth 1 "$GITHUB_WORKSPACE" "$cache"
+          echo "dirty" >> "$cache/CLAUDE.md"
+          # run bootstrap.sh from a lone copy so the self-host detection fails
+          # (no sibling CLAUDE.md / .claude/agents) and the cache path is taken.
+          standalone="$(mktemp -d)/bootstrap.sh"
+          cp "$GITHUB_WORKSPACE/bootstrap.sh" "$standalone"
+          chmod +x "$standalone"
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && CLAUDE_STRIKE_CACHE="$cache" "$standalone" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "has local modifications"
+
+      - name: non-git target emits warning and skips spec-kit
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          out="$(cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh" 2>&1)"
+          echo "$out"
+          echo "$out" | grep -q "is not a git repo"
+          test -f "$work/CLAUDE.md"
+          test -d "$work/.claude/agents"
+          test ! -d "$work/.specify"
+
+      - name: rejects spec-kit ref with unsupported characters
+        env:
+          CLAUDE_STRIKE_SPEC_KIT_REF: "bad;rm -rf /"
+        run: |
+          set -euo pipefail
+          # install uv so bootstrap reaches the ref-validation branch
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          command -v uvx
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "CLAUDE_STRIKE_SPEC_KIT_REF contains unsupported characters"

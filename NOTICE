@@ -18,6 +18,12 @@ claude-strike includes content from these projects.
 
 Full MIT text is in `LICENSE`.
 
+## andrej-karpathy-skills
+
+- Source: https://github.com/forrestchang/andrej-karpathy-skills
+- License: none declared upstream.
+- No files copied. `CLAUDE.md` is a reimplementation informed by the upstream template — the section structure (Definitions → Workflow → Core principles → Done means done → Self-improvement → Code rules → Task management), the `tasks/todo.md` and `tasks/lessons.md` workflow, and the lesson-template format all trace to it. Credited as inspiration.
+
 ## spec-kit
 
 - Source: https://github.com/github/spec-kit (MIT)

@@ -99,10 +99,4 @@ If you find a CRITICAL vulnerability:
 - Dependencies up to date
 - Security checklist complete
 
-## Reference
-
-For detailed vulnerability patterns, code examples, report templates, and PR review templates, see skill: `security-review`.
-
----
-
 **Remember**: Security is not optional. One vulnerability can cost users real financial losses. Be thorough, be paranoid, be proactive.

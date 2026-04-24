@@ -1,11 +1,6 @@
-# CLAUDE.md — Behavioral contract
+# CLAUDE.md
 
-Read fully before acting. When other guidance (subagents, skills, plugin commands) conflicts with this file, this file wins.
-
-**What this assumes is present:**
-- The 13 ECC agents in `.claude/agents/`: `build-error-resolver`, `code-architect`, `code-reviewer`, `code-simplifier`, `comment-analyzer`, `database-reviewer`, `docs-lookup`, `opensource-packager`, `opensource-sanitizer`, `planner`, `security-reviewer`, `silent-failure-hunter`, `tdd-guide`.
-- ECC rules bundles in `.claude/rules/common/` and `.claude/rules/python/`, readable as reference.
-- `spec-kit` is **opt-in per project**, not global. See `docs/spec-kit.md` in the harness repo.
+Rules for Claude Code. Read fully before acting. When other guidance (subagents, skills, plugin commands) conflicts with this file, this file wins.
 
 ---
 
@@ -33,25 +28,17 @@ Trivial changes skip this and proceed directly.
 
 **Think before coding.** Don't assume. Don't hide confusion. State assumptions explicitly. When a request is ambiguous, present multiple interpretations — don't pick silently. Push back when a simpler approach exists. Stop and ask when unclear.
 
-**Delegate liberally.** Use subagents to keep the main context clean. One task per subagent, chosen deliberately — not reflexively. Invoke the ECC agent whose specialty matches the task:
+**Delegate liberally.** Use subagents to keep the main context clean. One task per subagent, chosen deliberately — not reflexively.
 
 | Agent | When |
 |---|---|
 | `code-reviewer` | Before committing any non-trivial change. |
-| `code-architect` | Designing a new module or planning a refactor. |
-| `code-simplifier` | A file feels bloated and needs to shrink without behavior change. |
-| `build-error-resolver` | The build breaks or type errors appear. |
-| `database-reviewer` | Any SQL, schema, or migration change. |
-| `docs-lookup` | Current library or API documentation is needed. |
-| `planner` | Complex feature or refactor needs an implementation plan. |
-| `security-reviewer` | Auth, payments, user data, crypto, or external API boundaries. |
+| `code-architect` | Designing a new module, planning a refactor, or producing an implementation blueprint for a complex feature. |
+| `code-simplifier` | A file feels bloated and needs to shrink without behaviour change. |
 | `tdd-guide` | New feature or bug fix that needs a failing test first. |
-| `comment-analyzer` | Before merging — flag rotten or redundant comments. |
-| `silent-failure-hunter` | Before merging — catch swallowed errors. |
-| `opensource-sanitizer` | Before publishing a repo to GitHub. |
-| `opensource-packager` | Generating CLAUDE.md / setup.sh / README for release. |
+| `security-reviewer` | Auth, payments, user data, crypto, or external API boundaries. |
 
-**`code-reviewer` vs `security-reviewer`** — `code-reviewer` is the always-on quality gate after any non-trivial change; it performs a CRITICAL-level security pass as part of that. `security-reviewer` is for proactive deep dives on auth, payments, crypto, user-data handling, and external API boundaries. Default to `code-reviewer`; add `security-reviewer` only when the diff touches one of those high-risk surfaces.
+`code-reviewer` is the default quality gate after any non-trivial change; it does a CRITICAL-level security pass as part of that. Use `security-reviewer` on top of it when the diff touches auth, payments, crypto, user-data handling, or external API boundaries.
 
 **Goal-driven execution.** Transform imperative tasks into verifiable goals.
 
@@ -70,15 +57,13 @@ Trivial changes skip this and proceed directly.
 ## Core principles
 
 - **Simplicity first.** Minimum code that solves the problem. No features beyond what was asked. No abstractions for single-use code. No "flexibility" that wasn't requested. No error handling for impossible scenarios. If 200 lines could be 50, rewrite.
-- **Surgical changes.** Touch only what you must. Don't "improve" adjacent code, comments, or formatting. Match existing style even if you'd do it differently. Unrelated dead code gets mentioned, not deleted — but remove imports, variables, and functions that *your* changes orphaned. Every changed line must trace to the user's request.
+- **Surgical changes.** Touch only what you must. Don't "improve" adjacent code, comments, or formatting. Match existing style even if you'd do it differently. Unrelated dead code gets mentioned, not deleted — but remove imports, variables, and functions that *your* changes orphaned. Every changed line must trace to the user's request. The code rules below apply to lines you add or modify — don't reformat or strip docstrings/comments from code you aren't otherwise touching.
 - **No laziness.** Find root causes. No temporary fixes. Senior developer standards.
 - **Search first.** Grep the existing implementation before writing new code. Check dependencies before adding one. Custom code is the last resort, not the first.
 
 ---
 
 ## Done means done
-
-A change is done when all of the following are true:
 
 1. The user's goal is achieved — verifiable, not "probably works".
 2. Tests exist and pass.
@@ -110,10 +95,11 @@ Entries without all three fields are notes, not lessons, and belong elsewhere.
 
 ## Code rules
 
-- **No comments unless absolutely necessary.** Code must be self-explanatory through naming. The only acceptable comment explains *why* a non-obvious decision was made — never *what* the code does. Noise comments, commented-out code, and comments that restate the signature are deleted on sight.
-- **No docstrings** on functions, methods, or classes. Module docstrings also forbidden. Names carry the meaning.
+- **Keep comments limited.** Code should be self-explanatory through naming. A comment is warranted only when it explains *why* a non-obvious decision was made — never *what* the code does. Noise comments, commented-out code, and comments that restate the signature are deleted on sight.
+- **Self-explanatory function names.** A reader must understand a function from its name alone. No vague verbs (`run`, `process`, `handle`, `do`). No abbreviations outside universal ones (`id`, `url`, `http`). Booleans prefix with `is_`, `has_`, or `can_`.
+- **No docstrings unless the function is genuinely complex.** If the name and signature don't make the behaviour obvious, the function is usually doing too much — split it first. Docstrings are also permitted when a framework consumes them as data (FastAPI/Flask route summaries, Pydantic field descriptions, Sphinx API references, click/typer help, pytest fixture `--fixtures` output). Never use them to restate the signature.
+- **No magic numbers or strings.** Non-obvious literals become named constants at module scope. Fine to leave inline: `0`, `1`, `-1`, obvious loop indices, and universally understood values like HTTP status codes.
 - **No nested functions.** Define helpers at module scope with a clear name. No closures-as-helpers, no inner `def`, no inner `async def`. Lambdas are permitted only in expression position and only when the body is a single trivial expression.
-- **Self-explanatory names.** A reader must understand a function from its name alone. No vague verbs (`run`, `process`, `handle`, `do`). No abbreviations outside universal ones (`id`, `url`, `http`). Booleans prefix with `is_`, `has_`, or `can_`.
 - **Type hints on every signature** — parameters and return.
 - **All imports at the top of the file.** No lazy imports inside functions or conditional blocks. No `try/except` around imports. A circular import means the architecture is wrong — fix the architecture.
 - **Functions do one thing.** If you describe it with "and", split it. Aim for under 20 lines.
@@ -134,9 +120,3 @@ Entries without all three fields are notes, not lessons, and belong elsewhere.
 3. Mark items complete as you go.
 4. Add a review section to `tasks/todo.md` when done.
 5. Update `tasks/lessons.md` after any correction.
-
----
-
-## Provenance
-
-Merged from the user's existing project contract plus Karpathy's `CLAUDE.md` (`forrestchang/andrej-karpathy-skills`). Every Karpathy rule was already expressed — usually more strictly — in the sections above, so nothing was added verbatim. When conflicts arose, the more restrictive rule won.

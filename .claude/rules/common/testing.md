@@ -30,28 +30,20 @@ MANDATORY workflow:
 
 ## Test Structure (AAA Pattern)
 
-Prefer Arrange-Act-Assert structure for tests:
+Prefer Arrange-Act-Assert structure for every test:
 
-```typescript
-test('calculates similarity correctly', () => {
-  // Arrange
-  const vector1 = [1, 0, 0]
-  const vector2 = [0, 1, 0]
+1. **Arrange** — set up inputs, fixtures, and any preconditions.
+2. **Act** — invoke the behaviour under test exactly once.
+3. **Assert** — verify the observable outcome.
 
-  // Act
-  const similarity = calculateCosineSimilarity(vector1, vector2)
-
-  // Assert
-  expect(similarity).toBe(0)
-})
-```
+One logical assertion per test. If you find yourself asserting two unrelated things, split the test.
 
 ### Test Naming
 
-Use descriptive names that explain the behavior under test:
+Name tests after the behaviour under test, not the function name. A reader should understand the scenario and the expected outcome from the test name alone. Examples:
 
-```typescript
-test('returns empty array when no markets match query', () => {})
-test('throws error when API key is missing', () => {})
-test('falls back to substring search when Redis is unavailable', () => {})
-```
+- `returns empty list when no markets match query`
+- `raises error when API key is missing`
+- `falls back to substring search when cache is unavailable`
+
+Avoid names like `test_process`, `test_1`, or `test_happy_path` — they carry no information.

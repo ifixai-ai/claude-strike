@@ -1,5 +1,4 @@
 *.bak.*
 .DS_Store
-.claude-harness-manifest
 .specify/
 tasks/

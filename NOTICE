@@ -1,50 +1,29 @@
 # NOTICE
 
-`claude-harness` bundles content from two upstream projects. Their licenses and
-attributions are reproduced here.
+claude-strike includes content from these projects.
 
-## Everything Claude Code (ECC)
+## everything-claude-code
 
 - Source: https://github.com/affaan-m/everything-claude-code
 - License: MIT — Copyright (c) 2026 Affaan Mustafa
-- Bundled subset:
-  - `.claude/agents/build-error-resolver.md`
-  - `.claude/agents/code-architect.md`
+- Included (with minor edits — stray `skill:` lines and version banners removed):
   - `.claude/agents/code-reviewer.md`
+  - `.claude/agents/code-architect.md`
   - `.claude/agents/code-simplifier.md`
-  - `.claude/agents/comment-analyzer.md`
-  - `.claude/agents/database-reviewer.md`
-  - `.claude/agents/docs-lookup.md`
-  - `.claude/agents/opensource-packager.md`
-  - `.claude/agents/opensource-sanitizer.md`
-  - `.claude/agents/planner.md`
   - `.claude/agents/security-reviewer.md`
-  - `.claude/agents/silent-failure-hunter.md`
   - `.claude/agents/tdd-guide.md`
-  - `.claude/rules/common/` (entire directory)
-  - `.claude/rules/python/` (entire directory)
+  - `.claude/rules/common/`
+  - `.claude/rules/python/`
 
-The full text of the MIT license is in `LICENSE`. No ECC agents, hooks, or
-settings beyond the files listed above are included.
+Full MIT text is in `LICENSE`.
 
-The 13 bundled agents were selected by the curation criteria in `README.md`:
-they either (a) are named by the shipped behavioural rules, (b) enforce a
-specific rule in `CLAUDE.md`, or (c) directly serve the "ship this repo to
-open source cleanly" use case. Language-specific reviewers, workflow
-orchestrators, and niche domain agents from ECC were intentionally excluded.
-
-## Andrej Karpathy Skills (`forrestchang/andrej-karpathy-skills`)
+## andrej-karpathy-skills
 
 - Source: https://github.com/forrestchang/andrej-karpathy-skills
-- Upstream license: none declared at time of writing (the repo ships without
-  a `LICENSE` file). This is the reason no content is copied from it.
-- Bundled: nothing. The merged `CLAUDE.md` was informed by the Karpathy
-  `CLAUDE.md`, but every rule was already expressed (usually more strictly) in
-  the base contract, so no file is copied. The reference above is kept for
-  attribution of the source material that shaped the merge.
+- License: none declared upstream.
+- Included: nothing. `CLAUDE.md` was informed by the upstream file but no file was copied. Listed here as credit.
 
-## Not bundled
+## spec-kit
 
-- `spec-kit` (https://github.com/github/spec-kit, MIT licensed) is referenced
-  in `docs/spec-kit.md` but is not included in this repository. Project installs
-  fetch and run it per-project with `uvx` as documented.
+- Source: https://github.com/github/spec-kit (MIT)
+- Included: nothing. Fetched by `uvx` at install time. Pin the ref with `CLAUDE_STRIKE_SPEC_KIT_REF`.

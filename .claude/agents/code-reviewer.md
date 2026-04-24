@@ -219,19 +219,6 @@ When available, also check project-specific conventions from `CLAUDE.md` or proj
 - Immutability requirements (spread operator over mutation)
 - Database policies (RLS, migration patterns)
 - Error handling patterns (custom error classes, error boundaries)
-- State management conventions (Zustand, Redux, Context)
+- Project-specific conventions (state management, dependency injection, logging, etc.)
 
 Adapt your review to the project's established patterns. When in doubt, match what the rest of the codebase does.
-
-## v1.8 AI-Generated Code Review Addendum
-
-When reviewing AI-generated changes, prioritize:
-
-1. Behavioral regressions and edge-case handling
-2. Security assumptions and trust boundaries
-3. Hidden coupling or accidental architecture drift
-4. Unnecessary model-cost-inducing complexity
-
-Cost-awareness check:
-- Flag workflows that escalate to higher-cost models without clear reasoning need.
-- Recommend defaulting to lower-cost tiers for deterministic refactors.

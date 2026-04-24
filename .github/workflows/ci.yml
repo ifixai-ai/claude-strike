@@ -5,83 +5,68 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   shellcheck:
     name: shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
       - name: run shellcheck
-        run: shellcheck install.sh uninstall.sh setup.sh
+        run: shellcheck bootstrap.sh
 
   install-roundtrip:
-    name: install + uninstall round-trip
-    runs-on: ubuntu-latest
+    name: install round-trip
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - name: dry-run global install
-        run: ./install.sh --dry-run
-        env:
-          HOME: ${{ runner.temp }}/home
-
-      - name: first install (global)
-        run: ./install.sh
-        env:
-          HOME: ${{ runner.temp }}/home
-
-      - name: assert every shipped agent landed
-        env:
-          HOME: ${{ runner.temp }}/home
-        run: |
-          set -euo pipefail
-          for f in .claude/agents/*.md; do
-            dest="$HOME/.claude/agents/$(basename "$f")"
-            test -f "$dest" || { echo "missing: $dest"; exit 1; }
-          done
-
-          for f in .claude/rules/common/*.md .claude/rules/python/*.md; do
-            rel="${f#.claude/}"
-            dest="$HOME/.claude/$rel"
-            test -f "$dest" || { echo "missing: $dest"; exit 1; }
-          done
-
-          test -f "$HOME/.claude/CLAUDE.md"
-          test -f "$HOME/.claude/.claude-harness-manifest"
-
-      - name: second install is idempotent (no backups created)
-        env:
-          HOME: ${{ runner.temp }}/home
-        run: |
-          set -euo pipefail
-          ./install.sh | tee /tmp/second-install.log
-          grep -qE "files backed up:\s+0" /tmp/second-install.log
-          grep -qE "files written:\s+0"  /tmp/second-install.log
-
-      - name: uninstall
-        run: ./uninstall.sh
-        env:
-          HOME: ${{ runner.temp }}/home
-
-      - name: assert uninstall removed everything it installed
-        env:
-          HOME: ${{ runner.temp }}/home
-        run: |
-          set -euo pipefail
-          for f in .claude/agents/*.md; do
-            dest="$HOME/.claude/agents/$(basename "$f")"
-            if [[ -e "$dest" ]]; then
-              echo "uninstall left behind: $dest"
-              exit 1
-            fi
-          done
-
-      - name: project-mode install works too
+      - name: install into a scratch repo
         run: |
           set -euo pipefail
           work="$(mktemp -d)"
-          cp -r . "$work/harness"
-          cd "$work/harness"
-          ./install.sh --project
-          test -f ./.claude/agents/code-reviewer.md
-          ./uninstall.sh --project
+          (cd "$work" && git init -q)
+          (cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh")
+          echo "WORK=$work" >> "$GITHUB_ENV"
+
+      - name: assert every shipped agent and rule landed
+        run: |
+          set -euo pipefail
+          for f in .claude/agents/*.md; do
+            dest="$WORK/.claude/agents/$(basename "$f")"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+          for f in .claude/rules/common/*.md .claude/rules/python/*.md; do
+            rel="${f#.claude/}"
+            dest="$WORK/.claude/$rel"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+          test -f "$WORK/CLAUDE.md"
+
+      - name: second install is idempotent (no backups, no new writes)
+        run: |
+          set -euo pipefail
+          (cd "$WORK" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/second.log"
+          grep -qE "files written:\s+0"  "$RUNNER_TEMP/second.log"
+          grep -qE "files backed up:\s+0" "$RUNNER_TEMP/second.log"
+
+      - name: a modified CLAUDE.md is preserved as a backup on re-install
+        run: |
+          set -euo pipefail
+          echo "USER MODIFIED LINE" >> "$WORK/CLAUDE.md"
+          (cd "$WORK" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/overwrite.log"
+          grep -qE "files backed up:\s+1" "$RUNNER_TEMP/overwrite.log"
+          backup="$(find "$WORK" -maxdepth 1 -name 'CLAUDE.md.bak.*' -print -quit)"
+          test -n "$backup"
+          grep -q "USER MODIFIED LINE" "$backup"

@@ -5,12 +5,16 @@ paths:
 ---
 # Python Coding Style
 
-> This file extends [common/coding-style.md](../common/coding-style.md) with Python specific content.
+The general code rules live in the project's `CLAUDE.md`. This file adds Python specifics.
 
-## Standards
+## Rules
 
-- Follow **PEP 8** conventions
-- Use **type annotations** on all function signatures
+- **PEP 8** conventions.
+- **Type annotations** on every function signature — parameters and return.
+- **Comments limited.** Only the *why* of a non-obvious decision. Delete noise comments, commented-out code, and comments that restate the signature.
+- **Self-explanatory names.** No vague verbs (`run`, `process`, `handle`, `do`). Booleans prefix with `is_`, `has_`, or `can_`.
+- **No docstrings unless the function is genuinely complex.** If the name and signature don't make behaviour obvious, split the function. Exception: framework-consumed docstrings (FastAPI/Flask routes, Pydantic field descriptions, click/typer help, Sphinx API references, pytest fixtures).
+- **No magic numbers or strings.** Named constants at module scope for non-obvious literals. Inline is fine for `0`, `1`, `-1`, obvious indices, and universal values like HTTP status codes.
 
 ## Immutability
 
@@ -18,13 +22,12 @@ Prefer immutable data structures:
 
 ```python
 from dataclasses import dataclass
+from typing import NamedTuple
 
 @dataclass(frozen=True)
 class User:
     name: str
     email: str
-
-from typing import NamedTuple
 
 class Point(NamedTuple):
     x: float
@@ -36,7 +39,3 @@ class Point(NamedTuple):
 - **black** for code formatting
 - **isort** for import sorting
 - **ruff** for linting
-
-## Reference
-
-See skill: `python-patterns` for comprehensive Python idioms and patterns.

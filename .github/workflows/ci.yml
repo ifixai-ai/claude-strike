@@ -1,0 +1,205 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: run shellcheck
+        run: shellcheck bootstrap.sh
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: install gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+        run: |
+          set -euo pipefail
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL "$url" -o /tmp/gitleaks.tgz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: scan history and working tree
+        run: gitleaks detect --source . --redact --verbose --no-banner
+
+  install-roundtrip:
+    name: install round-trip
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: install into a scratch repo
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          (cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh")
+          echo "WORK=$work" >> "$GITHUB_ENV"
+
+      - name: assert every shipped agent and rule landed
+        run: |
+          set -euo pipefail
+          for f in .claude/agents/*.md; do
+            dest="$WORK/.claude/agents/$(basename "$f")"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+          for f in .claude/rules/common/*.md .claude/rules/python/*.md; do
+            rel="${f#.claude/}"
+            dest="$WORK/.claude/$rel"
+            test -f "$dest" || { echo "missing: $dest"; exit 1; }
+          done
+          test -f "$WORK/CLAUDE.md"
+
+      - name: second install is idempotent (no backups, no new writes)
+        run: |
+          set -euo pipefail
+          (cd "$WORK" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/second.log"
+          grep -qE "files written:\s+0"  "$RUNNER_TEMP/second.log"
+          grep -qE "files backed up:\s+0" "$RUNNER_TEMP/second.log"
+
+      - name: a modified CLAUDE.md is preserved as a backup on re-install
+        run: |
+          set -euo pipefail
+          echo "USER MODIFIED LINE" >> "$WORK/CLAUDE.md"
+          (cd "$WORK" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/overwrite.log"
+          grep -qE "files backed up:\s+1" "$RUNNER_TEMP/overwrite.log"
+          backup="$(find "$WORK" -maxdepth 1 -name 'CLAUDE.md.bak.*' -print -quit)"
+          test -n "$backup"
+          grep -q "USER MODIFIED LINE" "$backup"
+
+  spec-kit-roundtrip:
+    name: spec-kit round-trip
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: install uv
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: bootstrap into scratch repo and run spec-kit end-to-end
+        run: |
+          set -euo pipefail
+          command -v uvx
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          (cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh") | tee "$RUNNER_TEMP/bootstrap.log"
+          grep -qv "spec-kit init failed" "$RUNNER_TEMP/bootstrap.log"
+          test -d "$work/.specify"
+          test -f "$work/.specify/memory/constitution.md"
+          test -f "$work/CLAUDE.md"
+          # claude-strike's rules must survive spec-kit merge
+          grep -q "Spec before non-trivial work" "$work/CLAUDE.md"
+          # claude-strike's agents must survive
+          for f in .claude/agents/*.md; do
+            test -f "$work/.claude/agents/$(basename "$f")"
+          done
+
+  bootstrap-edge-cases:
+    name: bootstrap edge cases
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: refuses $HOME as cache directory
+        env:
+          CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+          CLAUDE_STRIKE_CACHE: /home/runner
+        run: |
+          set -euo pipefail
+          standalone="$(mktemp -d)/bootstrap.sh"
+          cp "$GITHUB_WORKSPACE/bootstrap.sh" "$standalone"
+          chmod +x "$standalone"
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && "$standalone" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "CLAUDE_STRIKE_CACHE must be a dedicated subdirectory"
+
+      - name: refuses a dirty cache checkout
+        env:
+          CLAUDE_STRIKE_SKIP_SPEC_KIT: "1"
+        run: |
+          set -euo pipefail
+          cache="$(mktemp -d)/claude-strike-cache"
+          git clone --depth 1 "$GITHUB_WORKSPACE" "$cache"
+          echo "dirty" >> "$cache/CLAUDE.md"
+          # run bootstrap.sh from a lone copy so the self-host detection fails
+          # (no sibling CLAUDE.md / .claude/agents) and the cache path is taken.
+          standalone="$(mktemp -d)/bootstrap.sh"
+          cp "$GITHUB_WORKSPACE/bootstrap.sh" "$standalone"
+          chmod +x "$standalone"
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && CLAUDE_STRIKE_CACHE="$cache" "$standalone" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "has local modifications"
+
+      - name: non-git target emits warning and skips spec-kit
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          out="$(cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh" 2>&1)"
+          echo "$out"
+          echo "$out" | grep -q "is not a git repo"
+          test -f "$work/CLAUDE.md"
+          test -d "$work/.claude/agents"
+          test ! -d "$work/.specify"
+
+      - name: rejects spec-kit ref with unsupported characters
+        env:
+          CLAUDE_STRIKE_SPEC_KIT_REF: "bad;rm -rf /"
+        run: |
+          set -euo pipefail
+          # install uv so bootstrap reaches the ref-validation branch
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          command -v uvx
+          work="$(mktemp -d)"
+          (cd "$work" && git init -q)
+          set +e
+          out="$(cd "$work" && "$GITHUB_WORKSPACE/bootstrap.sh" 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
+          echo "$out" | grep -q "CLAUDE_STRIKE_SPEC_KIT_REF contains unsupported characters"

@@ -7,13 +7,14 @@ claude-strike includes content from these projects.
 - Source: https://github.com/affaan-m/everything-claude-code
 - License: MIT — Copyright (c) 2026 Affaan Mustafa
 - Included (with minor edits — stray `skill:` lines and version banners removed):
-  - `.claude/agents/code-reviewer.md`
   - `.claude/agents/code-architect.md`
   - `.claude/agents/code-simplifier.md`
-  - `.claude/agents/security-reviewer.md`
-  - `.claude/agents/tdd-guide.md`
   - `.claude/rules/common/`
   - `.claude/rules/python/`
+- Included (substantially modified — derivative works based on the MIT-licensed originals):
+  - `.claude/agents/security-reviewer.md` — generalized from Node/web-specific to stack-agnostic; added stack-detection table, expanded OWASP section, pattern table covering containers, IaC, GitHub Actions; added supply-chain guidance (SBOM, SHA pinning).
+  - `.claude/agents/code-reviewer.md` — generalized from TypeScript/React-specific to multi-stack; added stack-detection table and framework-gated sections for Python, Go, and Rust alongside React and Node.
+  - `.claude/agents/tdd-guide.md` — generalized from npm-only to stack-agnostic; added detection table mapping signal files to test and coverage commands for JS/TS, Python, Go, Rust, Ruby, Java/Kotlin, Elixir, and PHP.
 
 Full MIT text is in `LICENSE`.
 

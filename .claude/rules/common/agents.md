@@ -17,7 +17,7 @@ The following agents ship with this harness (under `~/.claude/agents/` for globa
 No user prompt needed:
 
 1. Complex feature requests, new modules, or refactors — use **code-architect**
-2. Code just written or modified — use **code-reviewer**
+2. Non-trivial code just written or modified — use **code-reviewer** (trivial single-file edits are exempt)
 3. Bug fix or new feature — use **tdd-guide**
 4. Any security-sensitive code — use **security-reviewer**
 

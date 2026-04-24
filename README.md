@@ -1,6 +1,8 @@
 # claude-strike
 
-One command adds a `CLAUDE.md`, five agents, and rule files to your repo, then runs `specify init` so Claude Code is ready to work there.
+**Spec-driven Claude Code, dropped into your repo in one command.**
+
+For developers using [Claude Code](https://docs.claude.com/claude-code) who want an opinionated starting point: a strict `CLAUDE.md`, five focused subagents (review, architect, simplify, TDD, security), and [spec-kit](https://github.com/github/spec-kit) wired up so non-trivial work goes through `/specify` → `/plan` → `/tasks` before code is written.
 
 Works on macOS, Linux, and Windows (Git Bash or WSL).
 

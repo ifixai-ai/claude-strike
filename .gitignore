@@ -1,0 +1,5 @@
+*.bak.*
+.DS_Store
+.specify/
+tasks/
+.claude/scheduled_tasks.lock

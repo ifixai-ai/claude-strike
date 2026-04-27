@@ -1,12 +1,32 @@
-# claude-strike
+<p align="center">
+  <img src="assets/banner.png" alt="Claude Strike" width="100%" />
+</p>
 
-**Spec-driven Claude Code, dropped into your repo in one command.**
+<p align="center">
+  <strong>Spec-driven Claude Code, dropped into your repo in one command.</strong>
+</p>
 
-For developers using [Claude Code](https://docs.claude.com/claude-code) who want an opinionated starting point: a strict `CLAUDE.md`, five focused subagents (review, architect, simplify, TDD, security), and [spec-kit](https://github.com/github/spec-kit) wired up so non-trivial work goes through `/specify` → `/plan` → `/tasks` before code is written.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://docs.claude.com/claude-code"><img src="https://img.shields.io/badge/built%20for-Claude%20Code-orange.svg" alt="Built for Claude Code"></a>
+  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platforms">
+</p>
+
+---
+
+## Overview
+
+For developers using [Claude Code](https://docs.claude.com/claude-code) who want an opinionated starting point:
+
+- A strict `CLAUDE.md` ruleset
+- Five focused subagents — review, architect, simplify, TDD, security
+- [spec-kit](https://github.com/github/spec-kit) wired up so non-trivial work goes through `/specify` → `/plan` → `/tasks` before any code is written
 
 Works on macOS, Linux, and Windows (Git Bash or WSL).
 
-## Install
+---
+
+## Quick install
 
 From inside the repo you want to set up:
 
@@ -14,13 +34,13 @@ From inside the repo you want to set up:
 curl -fsSL https://raw.githubusercontent.com/ifixai-ai/claude-strike/main/bootstrap.sh | bash
 ```
 
-What it does:
+**What it does**
 
-- Clones `claude-strike` into `~/.cache/claude-strike` (or `$CLAUDE_STRIKE_CACHE`).
-- Copies files into your repo.
-- Runs `specify init --here --ai claude` to add spec-kit.
+- Clones `claude-strike` into `~/.cache/claude-strike` (or `$CLAUDE_STRIKE_CACHE`)
+- Copies files into your repo
+- Runs `specify init --here --ai claude` to add spec-kit
 
-Re-running is safe. Existing files are backed up to `<path>.bak.<timestamp>` before being overwritten.
+> Re-running is safe. Existing files are backed up to `<path>.bak.<timestamp>` before being overwritten.
 
 ### From a local checkout
 
@@ -32,33 +52,43 @@ bash /tmp/claude-strike/bootstrap.sh
 
 ### Requirements
 
-- A git repo — run `git init` first if needed.
-- `uv` on your PATH — see [docs](https://docs.astral.sh/uv/). If missing, files still install and spec-kit is skipped with a warning.
+- A git repo — run `git init` first if needed
+- `uv` on your `PATH` — see [docs](https://docs.astral.sh/uv/). If missing, files still install and spec-kit is skipped with a warning.
 
 ### What gets written
 
-- `CLAUDE.md`
-- `.claude/agents/`
-- `.claude/rules/`
-- `.specify/` and spec-kit commands
+| Path | Purpose |
+|------|---------|
+| `CLAUDE.md` | Ruleset Claude reads every session |
+| `.claude/agents/` | Subagent definitions |
+| `.claude/rules/` | Common and per-language coding rules |
+| `.specify/` | spec-kit config and commands |
+
+---
 
 ## Agents
 
-- `code-reviewer` — quality and security pass after writes.
-- `code-architect` — feature design and planning.
-- `code-simplifier` — cut complexity without changing behaviour.
-- `tdd-guide` — write tests first.
-- `security-reviewer` — deep security pass for auth, crypto, payments, user data.
+| Agent | Purpose |
+|-------|---------|
+| `code-reviewer` | Quality and security pass after writes |
+| `code-architect` | Feature design and planning |
+| `code-simplifier` | Cut complexity without changing behaviour |
+| `tdd-guide` | Write tests first |
+| `security-reviewer` | Deep security pass for auth, crypto, payments, user data |
 
 See [`CLAUDE.md`](CLAUDE.md) for when to use each one.
+
+---
 
 ## Languages
 
 Python has its own rules in [`.claude/rules/python/`](.claude/rules/python/). Other languages use the common rules.
 
+---
+
 ## Security
 
-See [SECURITY.md](SECURITY.md) to report a vulnerability.
+See [`SECURITY.md`](SECURITY.md) to report a vulnerability.
 
 ## License
 

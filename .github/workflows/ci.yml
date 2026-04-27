@@ -203,3 +203,18 @@ jobs:
           set -e
           test "$rc" -eq 1 || { echo "expected exit 1, got $rc"; echo "$out"; exit 1; }
           echo "$out" | grep -q "CLAUDE_STRIKE_SPEC_KIT_REF contains unsupported characters"
+
+  ci-success:
+    name: ci-success
+    if: always()
+    needs:
+      - shellcheck
+      - gitleaks
+      - install-roundtrip
+      - spec-kit-roundtrip
+      - bootstrap-edge-cases
+    runs-on: ubuntu-latest
+    steps:
+      - name: fail if any dependency did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}
+        run: exit 1
